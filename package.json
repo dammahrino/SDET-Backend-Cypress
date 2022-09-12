@@ -1,0 +1,26 @@
+{
+  "name": "sdet-backend-cypress",
+  "version": "1.0.0",
+  "description": "Using Cypress to Test NASA's Mars Rover API.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dammahrino/SDET-Backend-Cypress.git"
+  },
+  "keywords": [
+    "API_Testing",
+    "Cypress"
+  ],
+  "author": "Daniel Cadena",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dammahrino/SDET-Backend-Cypress/issues"
+  },
+  "homepage": "https://github.com/dammahrino/SDET-Backend-Cypress#readme",
+  "devDependencies": {
+    "cypress": "^10.7.0"
+  }
+}
