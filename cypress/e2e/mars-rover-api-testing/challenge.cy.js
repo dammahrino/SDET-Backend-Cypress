@@ -38,8 +38,8 @@ describe('NASA SDET Challenge using Cypress', () => {
 
             requestedPhotos.forEach((photo, index) => {
                 cy.log(`Photo ${index + 1}: ${photo.img_src}`);
-            })
-        })
+            });
+        });
     });
 
     it(`Retrieve the first ${Cypress.env('n_photos')} Mars photos made by "${Cypress.env('rover')}" on Earth date equal to ${Cypress.env('sol')} Martian Sol.`, () => {
@@ -112,7 +112,7 @@ describe('NASA SDET Challenge using Cypress', () => {
         let earth_date;
         let requestedPhotosByEarthDate;
         let requestedPhotosBySolDay;
-        
+
         cy.request({
             method: 'GET',
             url: `${Cypress.env('manifests_url')}/${Cypress.env('rover')}`,
@@ -183,7 +183,7 @@ describe('NASA SDET Challenge using Cypress', () => {
                     assert.isObject(response.body);
                     assert.isArray(response.body.photos);
 
-                    const requestedPhotosBySolDay = response.body.photos.slice(0, Cypress.env('n_photos'));
+                    requestedPhotosBySolDay = response.body.photos.slice(0, Cypress.env('n_photos'));
                     assert.lengthOf(requestedPhotosBySolDay, Cypress.env('n_photos'), `Retrieved ${Cypress.env('n_photos')} photos`);
 
 
@@ -201,8 +201,70 @@ describe('NASA SDET Challenge using Cypress', () => {
                     });
 
                     assert.deepEqual(requestedPhotosBySolDay, requestedPhotosByEarthDate, 'Both photos arrays are equal!' | 'Arrays are different!');
+                    cy.log('Images');
+                    requestedPhotosByEarthDate.forEach((photo, index) => {
+                        cy.log(`Photo ${index + 1}: ${photo.img_src}`);
+                    });
                 })
             })
+        });
+    });
+
+    it(`Validate that the amounts of pictures that each "${Cypress.env('rover')}" camera took on ${Cypress.env('sol')} Mars Sols is not greater than 10 times the amount taken by other cameras on the same date.`, () => {
+        let roverCameras;
+        cy.request({
+            method: 'GET',
+            url: `${Cypress.env('manifests_url')}/${Cypress.env('rover')}`,
+            qs: {
+                "api_key": Cypress.env('API_KEY')
+            }
+        }).as('getRoverManifest');
+
+        cy.get('@getRoverManifest').then(response => {
+            expect(response.status).is.equal(200);
+            assert.isObject(response.body);
+            assert.isArray(response.body['photo_manifest'].photos);
+
+            const manifest_object = response.body['photo_manifest'].photos.filter(photo => photo.sol === Cypress.env('sol'));
+            expect(manifest_object).is.not.empty;
+            expect(manifest_object[0]).is.not.null;
+            expect(manifest_object[0].sol).to.be.equal(Cypress.env('sol'));
+
+            // Retrieving the available cameras on the Sol Day requested.
+            roverCameras = manifest_object[0].cameras;
+            expect(roverCameras).is.not.empty;
+        }).then(() => {
+            // Retrieve all the photos of the Sol Day requested
+            cy.request({
+                method: 'GET',
+                url: `${Cypress.env('rovers_url')}/${Cypress.env('rover')}/photos`,
+                qs: {
+                    "sol": Cypress.env('sol'),
+                    "api_key": Cypress.env('API_KEY')
+                }
+            }).as('getPhotosBySolDay');
+
+            // Alliased request validation.
+            cy.get('@getPhotosBySolDay').then(response => {
+                expect(response.status).to.equal(200);
+                assert.isObject(response.body);
+                assert.isArray(response.body.photos);
+
+                // Split the photos in each of their cameras
+                let photosPerCamera = [];
+                roverCameras.forEach(camera => {
+                    photosPerCamera.push(response.body.photos.filter(photo => photo.camera.name === camera));
+                })
+
+                // Validate all the possible combinations to ensure no camera has more than 10x photos than any other camera.
+                for (let camera_index = 0; camera_index < roverCameras.length; camera_index++) {
+                    for (let subcamera_index = 0; subcamera_index < roverCameras.length; subcamera_index++) {
+                        if (!(camera_index == subcamera_index)) {
+                            expect(photosPerCamera[camera_index].length).is.lessThan(10 * photosPerCamera[subcamera_index].length);
+                        }
+                    }
+                }
+            });
         });
     });
 });
