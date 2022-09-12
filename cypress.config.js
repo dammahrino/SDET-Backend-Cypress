@@ -9,7 +9,9 @@ module.exports = defineConfig({
     env: {
       manifests_url: '/manifests',
       rovers_url: '/rovers',
-      curiosity_cameras: ['FHAZ', 'RHAZ', 'MAST', 'CHEMCAM', 'MAHLI', 'MARDI', 'NAVCAM']
+      n_photos: 10,
+      sol: 1000,
+      rover: 'Curiosity'
     },
     video: false
   },

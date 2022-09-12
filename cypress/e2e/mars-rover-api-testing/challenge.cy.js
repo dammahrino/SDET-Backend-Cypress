@@ -1,16 +1,12 @@
 /// <reference types="cypress" />
+import { restClient } from '../../support/restClient';
 
 
 describe('NASA SDET Challenge using Cypress', () => {
     it(`Retrieve the first ${Cypress.env('n_photos')} Mars photos made by "${Cypress.env('rover')}" on ${Cypress.env('sol')} Martian Sol.`, () => {
-        cy.request({
-            method: 'GET',
-            url: `${Cypress.env('rovers_url')}/${Cypress.env('rover')}/photos`,
-            qs: {
-                "sol": Cypress.env('sol'),
-                "api_key": Cypress.env('API_KEY')
-            }
-        }).as('getPhotos');
+        restClient
+            .getMarsPhotosByMarsSol(Cypress.env('rover'), Cypress.env('sol'))
+            .as('getPhotos');
 
         // Alliased request validation.
         cy.get('@getPhotos').then(response => {
@@ -20,7 +16,6 @@ describe('NASA SDET Challenge using Cypress', () => {
 
             const requestedPhotos = response.body.photos.slice(0, Cypress.env('n_photos'));
             assert.lengthOf(requestedPhotos, Cypress.env('n_photos'), `Retrieved ${Cypress.env('n_photos')} photos`);
-
 
             requestedPhotos.forEach(photo => {
                 expect(photo.sol).is.not.null;
@@ -35,7 +30,6 @@ describe('NASA SDET Challenge using Cypress', () => {
                 expect(photo.img_src).is.a('string', 'img_src is a string');
             });
 
-
             requestedPhotos.forEach((photo, index) => {
                 cy.log(`Photo ${index + 1}: ${photo.img_src}`);
             });
@@ -43,13 +37,9 @@ describe('NASA SDET Challenge using Cypress', () => {
     });
 
     it(`Retrieve the first ${Cypress.env('n_photos')} Mars photos made by "${Cypress.env('rover')}" on Earth date equal to ${Cypress.env('sol')} Martian Sol.`, () => {
-        cy.request({
-            method: 'GET',
-            url: `${Cypress.env('manifests_url')}/${Cypress.env('rover')}`,
-            qs: {
-                "api_key": Cypress.env('API_KEY')
-            }
-        }).as('getRoverManifest');
+        restClient
+            .getRoverManifest(Cypress.env('rover'))
+            .as('getRoverManifest');
 
         cy.get('@getRoverManifest').then(response => {
             expect(response.status).is.equal(200);
@@ -67,15 +57,9 @@ describe('NASA SDET Challenge using Cypress', () => {
             expect(earth_date).to.match(/^\d{4}-\d{2}-\d{2}$/, 'Date matches date format');
 
             // Retrieving photos by Earth Day
-
-            cy.request({
-                method: 'GET',
-                url: `${Cypress.env('rovers_url')}/${Cypress.env('rover')}/photos`,
-                qs: {
-                    "earth_date": earth_date,
-                    "api_key": Cypress.env('API_KEY')
-                }
-            }).as('getPhotosByEarthDate');
+            restClient
+                .getMarsPhotosByEarthDate(Cypress.env('rover'), earth_date)
+                .as('getPhotosByEarthDate');
 
             // Alliased request validation.
             cy.get('@getPhotosByEarthDate').then(response => {
@@ -85,7 +69,6 @@ describe('NASA SDET Challenge using Cypress', () => {
 
                 const requestedPhotosByEarthDate = response.body.photos.slice(0, Cypress.env('n_photos'));
                 assert.lengthOf(requestedPhotosByEarthDate, Cypress.env('n_photos'), `Retrieved ${Cypress.env('n_photos')} photos`);
-
 
                 requestedPhotosByEarthDate.forEach(photo => {
                     expect(photo.sol).is.not.null;
@@ -100,7 +83,6 @@ describe('NASA SDET Challenge using Cypress', () => {
                     expect(photo.img_src).is.a('string', 'img_src is a string');
                 });
 
-
                 requestedPhotosByEarthDate.forEach((photo, index) => {
                     cy.log(`Photo ${index + 1}: ${photo.img_src}`);
                 })
@@ -113,13 +95,10 @@ describe('NASA SDET Challenge using Cypress', () => {
         let requestedPhotosByEarthDate;
         let requestedPhotosBySolDay;
 
-        cy.request({
-            method: 'GET',
-            url: `${Cypress.env('manifests_url')}/${Cypress.env('rover')}`,
-            qs: {
-                "api_key": Cypress.env('API_KEY')
-            }
-        }).as('getRoverManifest');
+
+        restClient
+            .getRoverManifest(Cypress.env('rover'))
+            .as('getRoverManifest');
 
         cy.get('@getRoverManifest').then(response => {
             expect(response.status).is.equal(200);
@@ -136,14 +115,10 @@ describe('NASA SDET Challenge using Cypress', () => {
             expect(earth_date).is.a('string');
             expect(earth_date).to.match(/^\d{4}-\d{2}-\d{2}$/, 'Date matches date format');
         }).then(() => {
-            cy.request({
-                method: 'GET',
-                url: `${Cypress.env('rovers_url')}/${Cypress.env('rover')}/photos`,
-                qs: {
-                    "earth_date": earth_date,
-                    "api_key": Cypress.env('API_KEY')
-                }
-            }).as('getPhotosByEarthDate');
+            // Retrieving photos by Earth Date
+            restClient
+                .getMarsPhotosByEarthDate(Cypress.env('rover'), earth_date)
+                .as('getPhotosByEarthDate');
 
             // Alliased request validation.
             cy.get('@getPhotosByEarthDate').then(response => {
@@ -168,14 +143,10 @@ describe('NASA SDET Challenge using Cypress', () => {
                     expect(photo.img_src).is.a('string', 'img_src is a string');
                 });
             }).then(() => {
-                cy.request({
-                    method: 'GET',
-                    url: `${Cypress.env('rovers_url')}/${Cypress.env('rover')}/photos`,
-                    qs: {
-                        "sol": Cypress.env('sol'),
-                        "api_key": Cypress.env('API_KEY')
-                    }
-                }).as('getPhotosBySolDay');
+                // Retrieving photos by Mars Sol
+                restClient
+                    .getMarsPhotosByMarsSol(Cypress.env('rover'), Cypress.env('sol'))
+                    .as('getPhotosBySolDay');
 
                 // Alliased request validation.
                 cy.get('@getPhotosBySolDay').then(response => {
@@ -212,13 +183,10 @@ describe('NASA SDET Challenge using Cypress', () => {
 
     it(`Validate that the amounts of pictures that each "${Cypress.env('rover')}" camera took on ${Cypress.env('sol')} Mars Sols is not greater than 10 times the amount taken by other cameras on the same date.`, () => {
         let roverCameras;
-        cy.request({
-            method: 'GET',
-            url: `${Cypress.env('manifests_url')}/${Cypress.env('rover')}`,
-            qs: {
-                "api_key": Cypress.env('API_KEY')
-            }
-        }).as('getRoverManifest');
+
+        restClient
+            .getRoverManifest(Cypress.env('rover'))
+            .as('getRoverManifest');
 
         cy.get('@getRoverManifest').then(response => {
             expect(response.status).is.equal(200);
@@ -235,14 +203,9 @@ describe('NASA SDET Challenge using Cypress', () => {
             expect(roverCameras).is.not.empty;
         }).then(() => {
             // Retrieve all the photos of the Sol Day requested
-            cy.request({
-                method: 'GET',
-                url: `${Cypress.env('rovers_url')}/${Cypress.env('rover')}/photos`,
-                qs: {
-                    "sol": Cypress.env('sol'),
-                    "api_key": Cypress.env('API_KEY')
-                }
-            }).as('getPhotosBySolDay');
+            restClient
+                .getMarsPhotosByMarsSol(Cypress.env('rover'), Cypress.env('sol'))
+                .as('getPhotosBySolDay');
 
             // Alliased request validation.
             cy.get('@getPhotosBySolDay').then(response => {
