@@ -4,7 +4,7 @@
   "description": "Using Cypress to Test NASA's Mars Rover API.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "cypress:open": "node_modules/.bin/cypress open"
   },
   "repository": {
     "type": "git",
